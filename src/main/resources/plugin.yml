@@ -1,0 +1,9 @@
+name: BattlePass
+main: org.dstokesncstudio.battlepass.BattlePass
+version: 1.0
+api-version: 1.17
+description: Your BattlePass plugin description
+authors: [Robbie Stokes]
+commands:
+  battlepass:
+    usage: /<command>
