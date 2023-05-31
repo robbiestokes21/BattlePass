@@ -22,9 +22,9 @@ public final class BattlePass extends JavaPlugin implements Listener {
         this.getServer().getPluginManager().registerEvents(new openCommand(0, Material.TRIPWIRE_HOOK, 5), this);
         this.getLogger().info("BattlePass has been enabled.");
         if(DBConn){
-            this.getLogger().info("Connected to BattlePass Database");
+            this.getLogger().info(databaseConn.getMessage("Connected"));
         }else {
-            this.getLogger().info("Unable to connect to BattlePass Database");
+            this.getLogger().info(databaseConn.getMessage("Error"));
         }
     }
 
