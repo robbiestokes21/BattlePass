@@ -1,27 +1,35 @@
 package org.dstokesncstudio.battlepass;
 
-import com.google.common.util.concurrent.Service;
+
+import org.bukkit.Material;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.sql.SQLException;
+import java.sql.Connection;
+import java.sql.DriverManager;
 
 public final class BattlePass extends JavaPlugin implements Listener {
-
-
     private static BattlePass plugin;
-    @Override
+
     public void onEnable() {
+        databaseConn conn = databaseConn.getConn();
+        boolean DBConn = databaseConn.getDBConn();
+
         plugin = this;
-        // Plugin startup logic
-        getCommand("battlepass").setExecutor(new openCommand(0));
-        getServer().getPluginManager().registerEvents(new openCommand(0), this);
-        getLogger().info("BattlePass has been enabled.");
+
+        this.getCommand("battlepass").setExecutor(new openCommand(0, Material.TRIPWIRE_HOOK, 5));
+        this.getServer().getPluginManager().registerEvents(new openCommand(0, Material.TRIPWIRE_HOOK, 5), this);
+        this.getLogger().info("BattlePass has been enabled.");
+        if(DBConn){
+            this.getLogger().info("Connected to BattlePass Database");
+        }else {
+            this.getLogger().info("Unable to connect to BattlePass Database");
+        }
     }
 
-    @Override
     public void onDisable() {
-        // Plugin shutdown logic
-        getLogger().info("BattlePass has been disabled.");
+        this.getLogger().info("BattlePass has been disabled.");
     }
 
     public static BattlePass getPlugin() {

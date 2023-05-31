@@ -11,9 +11,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+
 
 import java.io.File;
 import java.io.IOException;
@@ -24,24 +26,35 @@ public class openCommand implements CommandExecutor, Listener {
     private final List<ItemStack> unlockItems;
     private int currentLevel;
     private FileConfiguration config;
-    public openCommand(int currentLevel) {
+    private final Material requiredKeyMaterial;  // Added variable to store the required key material
+    private int requiredKeyAmount;  // Added variable to store the required key amount
+    private final String Key = "key";
+
+    public openCommand(int currentLevel, Material requiredKeyMaterial, int requiredKeyAmount) {
         this.currentLevel = currentLevel;
         unlockItems = new ArrayList<>();
         // Add the custom unlock items here
-        unlockItems.add(createUnlockItem(Material.DIAMOND, "Diamond Key"));
-        unlockItems.add(createUnlockItem(Material.GOLD_INGOT, "Golden Key"));
+        unlockItems.add(createUnlockItem(Material.DIAMOND, "DIAMOND"));
+        unlockItems.add(createUnlockItem(Material.GOLD_INGOT, "GOLD_INGOT"));
         // Add more unlock items if needed
         config = YamlConfiguration.loadConfiguration(new File("plugins/battlepass/config.yml"));
-        initializeConfig();
+        //initializeConfig();
+
+        this.requiredKeyMaterial = requiredKeyMaterial;
+        this.requiredKeyAmount = requiredKeyAmount;
     }
-    private void initializeConfig() {
+
+    private void initializeConfig(Player player) {
         File configFile = new File("plugins/battlepass/config.yml");
         config = YamlConfiguration.loadConfiguration(configFile);
-
+        String playerId = player.getUniqueId().toString();
         if (!configFile.exists()) {
             config.options().copyDefaults(true);
+            config.set("players." + playerId + ".keys", 0); // Set the initial key count to 0
+            config.set("players." + playerId +".requiredKeysAmount", requiredKeyAmount);  // Save the required key amount to the config
             saveConfig();
         }
+        requiredKeyAmount = config.getInt("requiredKeysAmount", requiredKeyAmount);  // Retrieve the required key amount from the config
     }
     private void saveConfig() {
         try {
@@ -50,6 +63,50 @@ public class openCommand implements CommandExecutor, Listener {
             e.printStackTrace();
         }
     }
+    private void saveConfigFile() {
+        // Save the config file to disk
+        try {
+            config.save(new File("plugins/battlepass/config.yml"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @EventHandler
+    public void onPlayerInteract(PlayerInteractEvent event) {
+        if (event.hasItem()) {
+            Material itemMaterial = event.getItem().getType();
+            if (itemMaterial == Material.TRIPWIRE_HOOK) {
+                event.setCancelled(true); // Cancel the event to prevent placing the battle pass key
+                event.getPlayer().sendMessage("You are not allowed to place the battle pass key.");
+            }
+        }
+    }
+    private void setPlayerLevel(Player player, int level) {
+        // Set the player's level in the config file
+        String playerId = player.getUniqueId().toString();
+        config.set("players." + playerId + ".level", level);
+        saveConfigFile();
+    }
+
+    private void setPlayerKeys(Player player, int keys) {
+        String playerId = player.getUniqueId().toString();
+        config.set("players." + playerId + ".keys", keys);  // Save the player's key count to the config
+        saveConfigFile();
+    }
+
+    private int getPlayerKeys(Player player) {
+        String playerId = player.getUniqueId().toString();
+        return config.getInt("players." + playerId + ".keys", 0);  // Retrieve the player's key count from the config
+    }
+
+    private int getCurrentLevel(Player player) {
+        // Implement the logic to get the current level of the player's battle pass
+        // You can use a data storage system (e.g., configuration file, database) to store and retrieve the player's progress
+        String playerId = player.getUniqueId().toString();
+        return config.getInt("players." + playerId + ".level", 0);
+    }
+
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (!(sender instanceof Player)) {
@@ -58,7 +115,7 @@ public class openCommand implements CommandExecutor, Listener {
         }
 
         Player player = (Player) sender;
-
+        initializeConfig(player);
         if (cmd.getName().equalsIgnoreCase("battlepass")) {
             if (args.length == 0) {
                 // If no arguments provided, open the battle pass menu for the player
@@ -72,6 +129,48 @@ public class openCommand implements CommandExecutor, Listener {
             }else if (args.length == 1 && args[0].equalsIgnoreCase("level")) {
                 player.sendMessage("Your level in the battlepass is: " + getCurrentLevel(player));
                 return true;
+            }else if (args.length >= 3 && args[0].equalsIgnoreCase("give")) {
+                if (player.isOp()) {
+                    Player targetPlayer = Bukkit.getPlayer(args[1]);
+                    if (targetPlayer != null) {
+                        Material itemMaterial = Material.matchMaterial(String.valueOf(Material.TRIPWIRE_HOOK));
+                        if(Key.equals(args[2])){
+                            if (itemMaterial != null) {
+                                ItemStack itemStack = createUnlockItem(itemMaterial, "Battle Pass Key");
+                                int amount = 1;
+                                if (args.length >= 4) {
+                                    try {
+                                        amount = Integer.parseInt(args[3]);
+                                    } catch (NumberFormatException e) {
+                                        player.sendMessage("Invalid amount specified.");
+                                        return true;
+                                    }
+                                }
+                                itemStack.setAmount(amount);
+                                targetPlayer.getInventory().addItem(itemStack);
+                                targetPlayer.sendMessage("You received " + amount + " custom item(s) from an OP.");
+                                player.sendMessage("You gave " + amount + " custom item(s) to " + targetPlayer.getName());
+                                //get player keys
+                                int currentKeys = getPlayerKeys(player);
+                                int newKeys = currentKeys + amount;
+                                setPlayerKeys(player, newKeys);
+                                return true;
+                            } else {
+                                player.sendMessage("Invalid item material.");
+                                return true;
+                            }
+                        }else{
+                            player.sendMessage("Invalid item.");
+                            return true;
+                        }
+                    } else {
+                        player.sendMessage("Player not found.");
+                        return true;
+                    }
+                } else {
+                    player.sendMessage("You don't have permission to use this command.");
+                    return true;
+                }
             }
         }
 
@@ -88,12 +187,41 @@ public class openCommand implements CommandExecutor, Listener {
             ItemStack unlockItem = unlockItems.get(i);
             ItemMeta itemMeta = unlockItem.getItemMeta();
             itemMeta.setDisplayName("Unlock Level " + (i + 1));
+
+            // Create a new lore
+            List<String> lore = new ArrayList<>();
+            lore.add("This is the item you will unlock at Level " + (i + 1));
+
+            // Add information about the items the player will get if they claim the rewards
+            List<String> rewardItems = getRewardItemsForLevel(i + 1); // Assuming a method that retrieves the reward items based on the level
+            lore.addAll(rewardItems);
+
+            itemMeta.setLore(lore);
             unlockItem.setItemMeta(itemMeta);
             menu.setItem(i, unlockItem);
         }
 
         player.openInventory(menu);
 
+    }
+
+    private List<String> getRewardItemsForLevel(int level) {
+        List<String> rewardItems = new ArrayList<>();
+
+        // Add reward items based on the level
+        if (level == 1) {
+            rewardItems.add("Item 1");
+            rewardItems.add("Item 2");
+        } else if (level == 2) {
+            rewardItems.add("Item 3");
+            rewardItems.add("Item 4");
+            rewardItems.add("Item 5");
+        } else if (level == 3) {
+            rewardItems.add("Item 6");
+        }
+        // Add more conditions for different levels and reward items if needed
+
+        return rewardItems;
     }
     // Custom inventory click event handler
     @EventHandler
@@ -105,27 +233,6 @@ public class openCommand implements CommandExecutor, Listener {
             event.setCancelled(true); // Cancel the event to prevent item movement
         }
     }
-    private void saveConfigFile() {
-        // Save the config file to disk
-        try {
-            config.save(new File("plugins/battlepass/config.yml"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-    private void setPlayerLevel(Player player, int level) {
-        // Set the player's level in the config file
-        String playerId = player.getUniqueId().toString();
-        config.set("players." + playerId + ".level", level);
-        saveConfigFile();
-    }
-    private int getCurrentLevel(Player player) {
-        // Implement the logic to get the current level of the player's battle pass
-        // You can use a data storage system (e.g., configuration file, database) to store and retrieve the player's progress
-        String playerId = player.getUniqueId().toString();
-        return config.getInt("players." + playerId + ".level", 0);
-    }
-
 
     public void claimReward(Player player, int level) {
         if (level <= getCurrentLevel(player)) {
@@ -150,7 +257,6 @@ public class openCommand implements CommandExecutor, Listener {
         // ...
 
 
-
         // Optionally, you can send a message to the player indicating they have claimed the reward
         player.sendMessage("Congratulations! You have claimed the reward for level " + level);
     }
@@ -159,33 +265,63 @@ public class openCommand implements CommandExecutor, Listener {
         // Implement the logic to check if the player has the required items for the specified level
         // You can use player.getInventory().contains(...) or other methods to check for the items
         // Return true if the player has the required items, false otherwise
-        if (level == 1) {
-            return player.getInventory().contains(Material.DIAMOND);
+
+        if (level <= unlockItems.size()) {
+            ItemStack requiredKey = createUnlockItem(requiredKeyMaterial, "Battle Pass Key");
+            int playerKeyAmount = getPlayerKeyAmount(player);
+            return playerKeyAmount >= requiredKeyAmount;
         }
-        // If level 2 is reached, check if the player has a gold ingot:
-        else if (level == 2) {
-            return player.getInventory().contains(Material.GOLD_INGOT);
-        }
-        // Add more item checking logic as needed
 
         return false;
 
+
+
     }
 
+    private int getPlayerKeyAmount(Player player) {
+        int keyAmount = 0;
+
+        for (ItemStack item : player.getInventory().getContents()) {
+            if (item != null && item.getType() == requiredKeyMaterial) {
+                keyAmount += item.getAmount();
+            }
+        }
+
+        return keyAmount;
+    }
     private void removeRequiredItems(Player player, int level) {
         // Implement the logic to remove the required items from the player's inventory
         // You can use player.getInventory().remove(...) or other methods to remove the items
-        if (level == 1) {
-            player.getInventory().removeItem(new ItemStack(Material.DIAMOND, 1));
-        }
-        // If level 2 is reached, remove a gold ingot from the player's inventory:
-        else if (level == 2) {
-            player.getInventory().removeItem(new ItemStack(Material.GOLD_INGOT));
+
+        if (level <= unlockItems.size()) {
+            int remainingAmount = requiredKeyAmount;
+            ItemStack[] playerInventory = player.getInventory().getContents();
+
+            for (int i = 0; i < playerInventory.length; i++) {
+                ItemStack item = playerInventory[i];
+                if (item != null && item.getType() == requiredKeyMaterial) {
+                    int itemAmount = item.getAmount();
+                    if (itemAmount <= remainingAmount) {
+                        remainingAmount -= itemAmount;
+                        playerInventory[i] = null;
+
+                    } else {
+                        item.setAmount(itemAmount - remainingAmount);
+                        remainingAmount = 0;
+                        break;
+                    }
+                }
+            }
+
+            player.getInventory().setContents(playerInventory);
         }
         // Add more item removal logic as needed
 
         // Update the player's inventory
         player.updateInventory();
+        int currentKeys = getPlayerKeys(player);
+        int newKeys = currentKeys - requiredKeyAmount; // Subtract the required key amount
+        setPlayerKeys(player, newKeys);
     }
 
     private void giveReward(Player player, int level) {
@@ -211,5 +347,6 @@ public class openCommand implements CommandExecutor, Listener {
         itemStack.setItemMeta(itemMeta);
         return itemStack;
     }
+
 
 }

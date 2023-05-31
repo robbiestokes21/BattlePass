@@ -1,0 +1,12 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="BattlePass:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/BattlePass_jar</output-path>
+    <root id="archive" name="BattlePass.jar">
+      <element id="module-output" name="BattlePass" />
+      <element id="file-copy" path="$PROJECT_DIR$/target/BattlePass-1.0-SNAPSHOT-shaded.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/target/BattlePass-1.0-SNAPSHOT.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/target/original-BattlePass-1.0-SNAPSHOT.jar" />
+      <element id="module-source" name="BattlePass" />
+    </root>
+  </artifact>
+</component>
