@@ -5,10 +5,6 @@ import org.bukkit.Material;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.sql.SQLException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-
 public final class BattlePass extends JavaPlugin implements Listener {
     private static BattlePass plugin;
 
