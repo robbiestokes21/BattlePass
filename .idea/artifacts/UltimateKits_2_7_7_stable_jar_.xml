@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact name="UltimateKits-2_7_7-stable_jar_">
+    <output-path>$PROJECT_DIR$/out/artifacts/UltimateKits_2_7_7_stable_jar_</output-path>
+    <root id="root">
+      <element id="extracted-dir" path="$USER_HOME$/Downloads/UltimateKits-2.7.7-stable.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

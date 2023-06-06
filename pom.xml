@@ -70,6 +70,10 @@
             <id>sonatype</id>
             <url>https://oss.sonatype.org/content/groups/public/</url>
         </repository>
+        <repository>
+            <id>songoda-public</id>
+            <url>https://repo.songoda.com/repository/public/</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -77,6 +81,47 @@
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
             <version>1.19.4-R0.1-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.songoda</groupId>
+            <artifactId>UltimateKits</artifactId>
+            <version>2.7.7-stable</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.songoda</groupId>
+            <artifactId>SongodaCore</artifactId>
+            <version>2.6.21</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>me.clip</groupId>
+            <artifactId>placeholderapi</artifactId>
+            <version>2.5.1</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.earth2me</groupId>
+            <artifactId>essentials</artifactId>
+            <version>2.17.1</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>bammerbom</groupId>
+            <artifactId>UltimateCore</artifactId>
+            <version>2.1.26</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.Zrips</groupId>
+            <artifactId>CMI-API</artifactId>
+            <version>7.6.2.0</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
