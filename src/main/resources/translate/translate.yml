@@ -1,0 +1,11 @@
+en_us:
+  welcome_message: "Welcome to the server!"
+  goodbye_message: "Goodbye, see you next time!"
+  level_up: "Congratulations! You leveled up!"
+  BattlePassKey: "Use this to unlock Battle Pass tiers!"
+
+es_es:
+  welcome_message: "¡Bienvenido al servidor!"
+  goodbye_message: "¡Adiós, nos vemos la próxima vez!"
+  level_up: "¡Felicidades! Has subido de nivel!"
+  BattlePassKey: "¡Usa esto para desbloquear niveles de Pase de batalla!"
