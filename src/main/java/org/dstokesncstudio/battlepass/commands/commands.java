@@ -1,9 +1,10 @@
 package org.dstokesncstudio.battlepass.commands;
 
 
-import com.songoda.epicanchors.core.third_party.de.tr7zw.nbtapi.NBTItem;
-import com.songoda.epicanchors.core.utils.PlayerUtils;
+
+import com.songoda.core.third_party.de.tr7zw.nbtapi.NBTItem;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -14,18 +15,17 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.dstokesncstudio.battlepass.BattlePass;
 import org.dstokesncstudio.battlepass.model.PlayerBattlePass;
-
-
-import com.songoda.ultimatekits.key.KeyManager;
-import com.songoda.ultimatekits.key.Key;
-import com.songoda.ultimatekits.kit.KitType;
-import com.songoda.ultimatekits.kit.Kit;
+import org.bukkit.NamespacedKey;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
+import org.dstokesncstudio.battlepass.translate.TranslationConfig;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,20 +34,22 @@ import java.util.List;
 
 
 public class commands implements CommandExecutor, Listener {
-    private BattlePass battlePass;
+    private final BattlePass plugin;
     private commands cmd;
     private List<ItemStack> unlockItems;
     private int currentLevel;
     private int keyCount;
+    private String lore;
     private FileConfiguration config;
+
 
     private Material requiredKeyMaterial;  // Added variable to store the required key material
     private int requiredKeyAmount;  // Added variable to store the required key amount
     private final String Key = "key";
     private PlayerBattlePass PlayerBattlePass;
 
-    public commands(commands cmd){
-        this.cmd = cmd;
+    public commands(BattlePass plugin){
+        this.plugin = plugin;
 
     }
     private void initializeConfig(Player player) {
@@ -172,7 +174,7 @@ public class commands implements CommandExecutor, Listener {
                         Material itemMaterial = Material.matchMaterial(String.valueOf(Material.TRIPWIRE_HOOK));
                         if(Key.equals(args[2])){
                             if (itemMaterial != null) {
-                                ItemStack itemStack = createBattlepasskey(itemMaterial, "Battle Pass Key");
+                                ItemStack itemStack = createBattlepasskey(player,itemMaterial, "Battle Pass Key");
                                 int amount = 1;
                                 if (args.length >= 4) {
                                     try {
@@ -341,8 +343,13 @@ public class commands implements CommandExecutor, Listener {
 
             for (int i = 0; i < playerInventory.length; i++) {
                 ItemStack item = playerInventory[i];
-                if (item != null && item.getType() == requiredKeyMaterial) {
+                ItemMeta itemMeta = item.getItemMeta();
+        
+
+
+                if (item.getType() == requiredKeyMaterial) {
                     NBTItem nbtItem = new NBTItem(item);
+
                     if (nbtItem.hasKey("battlepass_key") && nbtItem.getString("battlepass_key").equals("true")) {
                         int itemAmount = item.getAmount();
                         if (itemAmount <= remainingAmount) {
@@ -399,10 +406,24 @@ public class commands implements CommandExecutor, Listener {
         //return itemStack;
     }
 
-    private ItemStack createBattlepasskey(Material material, String displayName){
+    private ItemStack createBattlepasskey(Player p, Material material, String displayName){
+        BattlePass plugin = BattlePass.getPlugin();
+        TranslationConfig translationConfig = plugin.getTranslationConfig();
+        String lore = translationConfig.getTranslation(p, "BattlePassKey");
+
         ItemStack itemStack = new ItemStack(material);
         ItemMeta itemMeta = itemStack.getItemMeta();
         itemMeta.setDisplayName(displayName);
+
+        List<String> itemLore = itemMeta.getLore();
+
+        if (itemLore == null) {
+            itemLore = new ArrayList<>();
+        }
+
+        itemLore.add(ChatColor.translateAlternateColorCodes('&', lore));
+
+        itemMeta.setLore(itemLore);
         itemStack.setItemMeta(itemMeta);
 
         // Set custom NBT tag
